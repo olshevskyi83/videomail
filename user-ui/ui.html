@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Videomail</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --panel-2: #1d2330;
+      --text: #e6e6e6;
+      --muted: #a6adbb;
+      --red: #e53935;
+      --orange: #ff9800;
+      --green: #2e7d32;
+      --blue: #1976d2;
+      --border: #273142;
+      --card: #151a23;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 12px 16px; border-bottom:1px solid var(--border); background: var(--panel);
+    }
+    .brand { display:flex; gap:10px; align-items:center; }
+    .brand h1 { font-size: 18px; margin: 0; }
+    .nick { color: #139419; font-size: 14px; font-weight: 600; }
+
+    .actions { display:flex; align-items:center; gap:8px; }
+    .btn {
+      border:1px solid var(--border); background: var(--panel-2); color: var(--text);
+      padding: 8px 12px; border-radius: 10px; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn.red     { background:#6b1b19; border-color:#7a2a27; }
+    .btn.orange  { background:#5b3a0a; border-color:#7b4a0a; }
+    .btn.green   { background:#124f1a; border-color:#1e6a26; }
+    .btn.blue    { background:#123a63; border-color:#174b7e; }
+    .chip { padding: 4px 8px; border:1px solid var(--border); border-radius: 999px; font-size:12px; color: var(--muted); }
+
+    .container { max-width: 980px; margin: 0 auto; padding: 16px; }
+
+    .tabs { display:flex; gap:8px; padding: 10px 0 16px; border-bottom: 1px solid var(--border); }
+    .tabs button {
+      background: transparent; color: var(--text); border:0; padding:8px 10px; font-weight:700; cursor:pointer;
+      border-bottom:2px solid transparent; border-radius: 0;
+    }
+    .tabs button[aria-current="true"] { border-color: var(--blue); color: #d6e8ff; }
+    [role="tabpanel"] { padding: 16px 0; }
+
+    .grid { display:grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .card {
+      background: var(--card); border:1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .muted { color: var(--muted); }
+    .sm { font-size: 12px; }
+
+    video, .preview {
+      width: 100%; border-radius: 10px; background: #000; display:block;
+      aspect-ratio: 16 / 9;
+      max-height: 70vh;
+      height: min(70vh, 56.25vw); /* 16:9, максимально використовує висоту */
+    }
+
+    .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .row > * { flex: 0 0 auto; }
+
+    .timer { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .timer.red { color: #ff6b6b; }
+
+    /* Support */
+    #support { background: #0c0f14; border-radius: 12px; padding: 0; }
+    #support .wrap { padding: 16px; }
+    .tickets { display:flex; flex-direction:column; gap: 10px; max-height: 40vh; overflow:auto; }
+    .ticket { background: #131923; border:1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .ticket .q { color:#e0e6f4; }
+    .ticket .a { color:#e0e6f4; }
+    .ticket .wait { color:#ffce85; }
+    .ticket .meta { color:#7a8598; font-size: 12px; margin-top: 4px; }
+    .ticket .q b { color: #2e7d32; font-weight: 700; }
+    .ticket .a b { color: #e53935; }
+    .ticket .a { font-weight: 700; }
+
+    textarea {
+      width: 100%; min-height: 70px; resize: vertical; border-radius: 10px; padding: 10px;
+      border:1px solid var(--border); background: var(--panel); color: var(--text);
+    }
+    .row-end { display:flex; justify-content:flex-end; gap: 8px; }
+
+    #toast { margin-left: 10px; color:#d7eaff; }
+
+    /* Instructions */
+    .steps { display:flex; flex-direction:column; gap:10px; }
+    .step { background: var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px; }
+    .step h4 { margin:0 0 6px 0; font-size:14px; }
+    .steps { font-size: 15px; line-height: 1.4; }
+    .step h4 { font-size: 18px; font-weight: 700; }
+    .step .sm { font-size: 15px; }
+
+    /* Send video message */
+    .success {color: #2e7d32; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Videomail</h1>
+      <span class="chip">Кіоск</span>
+      <span id="toast" class="sm muted"></span>
+    </div>
+    <div class="actions">
+      <span class="nick" id="nick">...</span>
+      <button id="logoutBtn" class="btn">Вийти</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="tabs">
+      <button data-tab="record" aria-current="true">Запис</button>
+      <button data-tab="inbox">Inbox</button>
+      <button data-tab="support">Підтримка</button>
+      <button data-tab="guide">Інструкції</button>
+    </nav>
+
+    <section id="record" role="tabpanel">
+      <div class="grid">
+        <div class="card">
+          <video id="preview" class="preview" playsinline muted></video>
+          <div class="row" style="margin-top:10px">
+            <button id="startBtn" class="btn red">Запис</button>
+            <button id="stopBtn" class="btn orange" disabled>Стоп</button>
+            <button id="sendBtn" class="btn green" disabled>Надіслати</button>
+            <span id="timer" class="timer">00:00</span>
+          </div>
+          <div id="sendInfo" class="sm muted" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="inbox" role="tabpanel" hidden>
+      <div id="inboxList" class="grid"></div>
+    </section>
+
+    <section id="support" role="tabpanel" hidden>
+      <div class="wrap">
+        <div id="supportInfo" class="sm muted" style="margin-bottom:8px"></div>
+        <div id="supportList" class="tickets" style="margin-bottom:10px"></div>
+        <textarea id="supportMsg" placeholder="Опишіть вашу проблему або запитання..."></textarea>
+        <div class="row-end" style="margin-top:8px">
+          <button id="supportSend" class="btn blue">Надіслати у підтримку</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="guide" role="tabpanel" hidden>
+      <div class="card">
+        <h3 style="margin-top:0">Інструкції</h3>
+        <div class="steps">
+          <div class="step">
+            <h4>1. Підготуйтеся</h4>
+            <div class="sm muted">Перевірте камеру й мікрофон, сядьте так, щоб обличчя було в центрі кадру.</div>
+          </div>
+          <div class="step">
+            <h4>2. Запишіть відео</h4>
+            <div class="sm muted">Натисніть «Запис», говоріть чітко. По завершенні натисніть «Стоп».</div>
+          </div>
+          <div class="step">
+            <h4>3. Надішліть</h4>
+            <div class="sm muted">Перегляньте результат і натисніть «Надіслати». Очікуйте повідомлення про доставку.</div>
+          </div>
+          <div class="step">
+            <h4>4. Перегляньте відповіді</h4>
+            <div class="sm muted">У вкладці <b>Inbox</b> з’являтимуться відео від ваших близьких.</div>
+          </div>
+          <div class="step">
+            <h4>5. Зверніть увагу!</h4>
+            <div class="sm muted">Не надсилайте надто довгі відео-повідомлення. Чим коротше повідомлення, тим швидше воно опрацьовується. </div>
+          </div>
+          <div class="step">
+            <h4>6. Підтримка у разі виникнення запитань.</h4>
+            <div class="sm muted">Додаткові запитання? Пропозиції? Можливо вам необхідна допомога чи порада?
+                                  У вкладці <b>Підтримка</b> ви зможете звʼязатись з нами, відправивши повідомлення. 
+                                  Після опрацювання вашої ситуації ми обовʼзково надамо вам відповідь.
+              </div>
+          </div>
+        
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.VM && window.VM.initUI) window.VM.initUI();
+    });
+  </script>
+</body>
+</html>

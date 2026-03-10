@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="card">
+  <h3 style="margin:0 0 10px">Користувачі</h3>
+
+  <form method="post" action="/users/create" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px">
+    <input name="nickname" placeholder="Нікнейм" required style="padding:8px;border:1px solid #ddd;border-radius:8px">
+    <input name="code" placeholder="Код (ПІН)" style="padding:8px;border:1px solid #ddd;border-radius:8px">
+    <select name="role" style="padding:8px;border:1px solid #ddd;border-radius:8px">
+      <option value="user">user</option>
+      <option value="admin">admin</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="enabled" checked> enabled</label>
+    <button class="btn" type="submit">+ Додати</button>
+  </form>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="vstack">
+      {% for cat, msg in messages %}<span class="{{cat}}">{{ msg }}</span>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Нік</th><th>Роль</th><th>Enabled</th><th>user_key</th><th class="actions">Дії</th></tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{u.id}}</td>
+        <td><a href="/videos/{{u.user_key}}"><b>{{u.nickname}}</b></a></td>
+        <td>{{u.role}}</td>
+        <td>{{'yes' if u.enabled else 'no'}}</td>
+        <td class="mono">{{u.user_key or '—'}}</td>
+        <td class="actions">
+<form style="display:inline" method="post" action="/users/{{u.id}}/delete">
+            <button class="btn red" type="submit" onclick="return confirm('Видалити користувача?')">Видалити</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

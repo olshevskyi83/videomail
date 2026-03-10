@@ -1,0 +1,69 @@
+import os
+import json
+from aiohttp import web # type: ignore
+from telegram import Bot  # type: ignore
+
+BOT_TOKEN = os.environ.get("NOTIFY_BOT_TOKEN", "")
+CHAT_ID   = int(os.environ.get("NOTIFY_CHAT_ID", "0"))   # куди слати: id групи/користувача
+AUTH_TOKEN=__REDACTED__
+
+assert BOT_TOKEN, "NOTIFY_BOT_TOKEN is required"
+assert CHAT_ID,   "NOTIFY_CHAT_ID is required"
+assert AUTH_TOKEN, "NOTIFY_AUTH_TOKEN is required"
+
+bot = Bot(BOT_TOKEN)
+
+async def handle_notify(request: web.Request):
+    # Проста аутентифікація
+    if request.headers.get("X-Notify-Token") != AUTH_TOKEN:
+        return web.json_response({"ok": False, "error": "unauthorized"}, status=401)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad_json"}, status=400)
+
+    # Очікуємо:
+    # {
+    #   "from": "relative_nickname" | "ui:<nickname>",
+    #   "to":   "kiosk_nickname",
+    #   "source": "tg" | "ui",
+    #   "video_id": 123,
+    #   "user_key": "...",          # optional
+    #   "created_at": "2025-09-18T21:01:02Z"  # optional
+    # }
+    sender = data.get("from","?")
+    to = data.get("to","?")
+    src = data.get("source","?")
+    vid = data.get("video_id")
+    uk  = data.get("user_key")
+    when= data.get("created_at","")
+
+    lines = [
+        "📨 Нове відео",
+        f"Від: {sender}",
+        f"Кому: {to}",
+        f"Джерело: {src}",
+    ]
+    if vid is not None:
+        lines.append(f"id: {vid}")
+    if when:
+        lines.append(f"час: {when}")
+    if uk:
+        lines.append(f"user_key: {uk}")
+
+    text = "\n".join(lines)
+
+    try:
+        await bot.send_message(chat_id=CHAT_ID, text=text)
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)}, status=500)
+
+def main():
+    app = web.Application()
+    app.add_routes([web.post("/notify", handle_notify)])
+    web.run_app(app, host="0.0.0.0", port=int(os.environ.get("PORT","8088")))
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="card">
+  <h3 style="margin:0 0 10px">Редагування · {{u.nickname}}</h3>
+  <form method="post" action="/users/{{u.id}}/save" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+    <label>Нікнейм<br><input name="nickname" value="{{u.nickname}}" style="padding:8px;border:1px solid #ddd;border-radius:8px"></label>
+    <label>Код (ПІН)<br><input name="code" value="" placeholder="залиш порожнім — без змін" style="padding:8px;border:1px solid #ddd;border-radius:8px"></label>
+    <label>Роль<br>
+      <select name="role" style="padding:8px;border:1px solid #ddd;border-radius:8px">
+        <option value="user"  {{'selected' if u.role=='user' else ''}}>user</option>
+        <option value="admin" {{'selected' if u.role=='admin' else ''}}>admin</option>
+      </select>
+    </label>
+    <label style="align-self:end;display:flex;gap:8px;align-items:center">
+      <input type="checkbox" name="enabled" {{'checked' if u.enabled else ''}}> enabled
+    </label>
+    <div style="grid-column:1/-1">
+      <button class="btn" type="submit">Зберегти</button>
+      <a class="btn" href="/users">Назад</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

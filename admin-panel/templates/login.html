@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="uk"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login · Videomail Admin</title>
+<style>body{font-family:system-ui;padding:40px;background:#0b1320;color:#e5e7eb}</style>
+</head><body>
+<h2>Videomail Admin</h2>
+<form method="post">
+  <input name="password" type="password" placeholder="Пароль" style="padding:8px;border-radius:8px;border:1px solid #333">
+  <button type="submit" style="padding:8px 12px;border-radius:8px">Увійти</button>
+  {% if error %}<div style="color:#fca5a5;margin-top:8px">{{error}}</div>{% endif %}
+</form>
+</body></html>

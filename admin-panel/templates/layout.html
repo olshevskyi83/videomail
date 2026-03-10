@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Videomail Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0b1320; --fg:#e5e7eb; --muted:#94a3b8; --card:#111827;
+    --line:#1f2937; --accent:#60a5fa; --bad:#ef4444;
+    --chip:#e5e7eb; --chipText:#111827; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font:15px/1.55 system-ui,Segoe UI,Roboto,Ubuntu,sans-serif;background:var(--bg);color:var(--fg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px}
+  header{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  nav{display:flex;gap:12px;align-items:center;margin:12px 0;padding:8px 12px;background:#0f1b33;border-bottom:1px solid #172036}
+  .btn{display:inline-block;border:1px solid #d1d5db;background:var(--chip);color:var(--chipText);
+       padding:8px 10px;border-radius:10px;font-size:13px;margin:0 6px 6px 0;text-align:center;cursor:pointer}
+  .btn.red{border-color:#b91c1c;background:#fecaca;color:#7f1d1d}
+  .btn.full{width:100%}
+  .btn.sm{padding:6px 8px;font-size:12px}
+  .btn.stat{width:180px}
+  .btn.stat.alert{background:var(--bad);border-color:var(--bad);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+  .vstack{display:flex;flex-direction:column;gap:8px}
+  .title-link{font-weight:700;color:#e5e7eb}
+  .title-link:hover{text-decoration:underline}
+  .media260{width:260px;max-width:100%;margin:0 auto}
+  video{max-width:260px;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#000}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+  <nav>
+    <a href="/">Головна</a>
+    <a href="/users">Користувачі</a>
+    <a href="/support">Підтримка</a>
+  </nav>
+  <div class="wrap">
+    <header>
+      <h2 style="margin:0">Videomail Admin</h2>
+      <div class="mono">{{ base_dir if base_dir else '' }}</div>
+    </header>
+    {% block body %}{% endblock %}
+  </div>
+</body>
+</html>

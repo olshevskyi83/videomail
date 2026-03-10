@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    header { display:flex; gap:16px; align-items:center; margin-bottom:16px; }
+    nav a { margin-right: 10px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f2f2f2; text-align: left; }
+    .btn { padding: 6px 10px; text-decoration:none; border:1px solid #888; border-radius:6px; }
+    .btn-primary { background:#1a73e8; border-color:#1a73e8; color:#fff; }
+    .btn-danger { background:#d93025; border-color:#d93025; color:#fff; }
+    form.inline { display:inline; }
+    .flash { padding:8px 12px; background:#fff8e1; border:1px solid #f0d98c; margin-bottom:12px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .card { border:1px solid #ddd; border-radius:10px; padding:16px; }
+    input[type=text], input[type=checkbox] { font-size:14px; padding:6px; }
+    label { display:block; margin-top:8px; }
+  </style>
+</head>
+<body>
+<header>
+  <h2>Videomail Admin</h2>
+  <nav>
+    <a href="{{ url_for('users') }}">Користувачі</a>
+    <a href="{{ url_for('media') }}">Медіа</a>
+    <a href="{{ url_for('support') }}">Support</a>
+    <a href="{{ url_for('health') }}">Health</a>
+  </nav>
+</header>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+  {% endif %}
+{% endwith %}
+{% block body %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block body %}
+<h3>Відео · {{ user_key }}</h3>
+
+{% macro grid_review(items) -%}
+<div class="card">
+  <h4 style="margin:0 0 12px">На розгляді</h4>
+  <div class="grid">
+  {% for it in items %}
+    <div class="card">
+      <div class="media260">
+        <video controls preload="metadata" src="{{ it.preview_url }}"></video>
+        <div class="muted" style="margin:6px 0">
+          {{ it.created_at }} ·
+          {% if it.source == 'ui' %}від користувача{% else %}від родичів{% endif %}
+          <span style="margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#1e3a8a;font-weight:700;font-size:12px">
+            {{ it.dir_label }}
+          </span>
+        </div>
+        <div class="vstack">
+          <form method="post" action="/videos/approve_tg">
+            <input type="hidden" name="video_id" value="{{it.id}}">
+            <button class="btn sm full" type="submit">Approve to TG</button>
+          </form>
+          <form method="post" action="/videos/approve_inbox">
+            <input type="hidden" name="video_id" value="{{it.id}}">
+            <button class="btn sm full" type="submit">Approve to INBOX</button>
+          </form>
+          <form method="post" action="/videos/delete" onsubmit="return confirm('Видалити?')">
+            <input type="hidden" name="video_id" value="{{it.id}}">
+            <button class="btn sm full red" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro grid_published(title, items) -%}
+<div class="card">
+  <h4 style="margin:0 0 12px">{{ title }}</h4>
+  <div class="grid">
+  {% for it in items %}
+    <div class="card">
+      <div class="media260">
+        <video controls preload="metadata" src="{{ it.preview_url }}"></video>
+        <div class="muted" style="margin:6px 0">
+          {{ it.created_at }} ·
+          {% if it.source == 'ui' %}від користувача{% else %}від родичів{% endif %}
+          <span style="margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid #86efac;background:#ecfdf5;color:#065f46;font-weight:700;font-size:12px">
+            {{ 'Telegram' if it.target == 'tg' else 'Inbox(UI)' }}
+          </span>
+        </div>
+        <div class="vstack">
+          <form method="post" action="/videos/delete" onsubmit="return confirm('Видалити?')">
+            <input type="hidden" name="video_id" value="{{it.id}}">
+            <button class="btn sm full red" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{%- endmacro %}
+
+{{ grid_review(review) }}
+{{ grid_published('Опубліковані · Inbox(UI)', published_ui) }}
+{{ grid_published('Опубліковані · Telegram', published_tg) }}
+{% endblock %}

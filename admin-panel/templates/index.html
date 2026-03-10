@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block body %}
+  <div class="card">
+    <h3 style="margin:0 0 12px">Огляд користувачів</h3>
+    {% if not summary or summary|length == 0 %}
+      <div class="muted">Немає користувачів або даних. Додайте користувача у вкладці “Користувачі”.</div>
+    {% else %}
+      <div class="grid">
+        {% for u in summary %}
+          <div class="card" style="padding:14px">
+            {% if u.user_key %}
+              <a class="title-link" href="{{ '/videos/' ~ u.user_key }}">{{ u.nickname or '—' }}</a>
+            {% else %}
+              <div class="title-link" style="opacity:.6;pointer-events:none">{{ u.nickname or '—' }}</div>
+            {% endif %}
+            <div class="muted" style="font-size:12px">{{ u.name or '' }}</div>
+
+            <div class="vstack" style="margin-top:12px">
+              <a class="btn stat {% if (u.to_review or 0) > 0 %}alert{% endif %}"
+                 href="{{ u.user_key and ('/videos/' ~ u.user_key) or '#' }}">
+                Review {{ u.to_review or 0 }}
+              </a>
+              <a class="btn stat"
+                 href="{{ u.user_key and ('/videos/' ~ u.user_key) or '#' }}">
+                Published UI {{ u.published_ui or 0 }}
+              </a>
+              <a class="btn stat"
+                 href="{{ u.user_key and ('/videos/' ~ u.user_key) or '#' }}">
+                Published TG {{ u.published_tg or 0 }}
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,146 @@
+
+
+networks:
+  videomail:
+
+volumes:
+  pgdata:
+  coreapi-data:
+  familybot-data:
+
+services:
+  core-api:
+    build: ./core-api
+    restart: unless-stopped
+    environment:
+      # БД: або SQLite (за замовчуванням), або Postgres через profiles:postgres
+      DATABASE_URL: ${DATABASE_URL}
+      BASE_DIR: ${BASE_DIR}                 # має бути /srv/videomail
+      ADMIN_BEARER_TOKEN: ${ADMIN_BEARER_TOKEN}
+      SECRET_KEY: ${SECRET_KEY:-dev}
+      MAX_DURATION_SEC: ${MAX_DURATION_SEC:-180}
+      FFMPEG_DEADLINE: ${FFMPEG_DEADLINE:-25}
+      # ці два лише як інформаційні хости для редиректів/лінків, ядро не стрімить з них
+      KIOSK_HOST: ${KIOSK_HOST}
+      ADMIN_HOST: ${ADMIN_HOST}
+      CORE_PUBLIC_URL: ${CORE_PUBLIC_URL:-}
+      # інтеграції
+      NOTIFY_BOT_URL: http://notify-bot:8088
+      NOTIFY_AUTH_TOKEN: ${NOTIFY_AUTH_TOKEN:-}
+      NOTIFY_CHAT_ID: ${NOTIFY_CHAT_ID}
+    volumes:
+      - ${BASE_DIR}:${BASE_DIR}            # медіа на хості і в контейнері однаково
+      - coreapi-data:/app/data              # SQLite тут, якщо ти не на Postgres
+      - ./core-api:/app
+    expose:
+      - "8000"
+    depends_on:
+      - maybe-db
+    networks: [videomail]
+
+  # Плейсхолдер: якщо ти на SQLite, нічого не робить; якщо вибереш Postgres профілем — чекає db
+  maybe-db:
+    image: alpine:3.20
+    entrypoint: ["sh","-lc"]
+    command: >
+      if [ "$DB_MODE" = "postgres" ]; then
+        echo "Waiting for Postgres..." && sleep 2;
+      else
+        echo "SQLite mode. No external DB.";
+      fi
+    restart: "no"
+    networks: [videomail]
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-videomail}
+      POSTGRES_USER: ${POSTGRES_USER:-videomail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-videomail}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-videomail} -d ${POSTGRES_DB:-videomail}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    profiles: ["postgres"]
+    networks: [videomail]
+
+  # === БОТ РОДИЧІВ ===
+  family-bot:
+    build: ./bots/family-bot
+    restart: unless-stopped
+    env_file:
+      - ./config/family-bot.env      # FAMILY_BOT_TOKEN=...
+    environment:
+      CORE_API_URL: http://core-api:8000 # внутрішній DNS
+      BASE_DIR: ${BASE_DIR}            # /srv/videomail
+      LATEST_LIMIT: "5"
+      FAMILY_BOT_STATE: /data/family_state.json
+    depends_on:
+      - core-api
+    volumes:
+      - ${BASE_DIR}:${BASE_DIR}:ro     # критично: читати відео напряму
+      - familybot-data:/data            # локальний стейт бота
+                 # код бота
+    networks: [videomail]
+
+  # Нотифікації (без стосунку до стріму відео)
+  notify-bot:
+    build: ./bots/notify-bot
+    restart: unless-stopped
+    env_file:
+      - ./config/notify-bot.env        # NOTIFY_BOT_TOKEN, NOTIFY_CHAT_ID, NOTIFY_AUTH_TOKEN
+    expose:
+      - "8088"
+      
+    networks: [videomail]
+
+  # Статичний кіоск/кабінет користувача
+  user-ui:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./user-ui:/usr/share/nginx/html:ro
+      - ${CONFIG_DIR:-./user-ui/config}:/usr/share/nginx/html/config:ro
+    expose:
+      - "80"
+    networks: [videomail]
+
+  # Адмін-панель (фласк-дев сервер у контейнері, за реверс-проксі)
+  admin-panel:
+    build: ./admin-panel
+    restart: unless-stopped
+    environment:
+      CORE_API_URL: http://core-api:8000
+      ADMIN_BEARER_TOKEN: ${ADMIN_BEARER_TOKEN}
+      ADMIN_PASSWORD: ${ADMIN_PANEL_PASSWORD:-changeme_admin}
+      FLASK_SECRET: ${FLASK_SECRET:-devsecret}
+      BASE_DIR: ${BASE_DIR}
+    expose:
+      - "80"
+    volumes:
+      - ./admin-panel:/app
+    depends_on:
+      - core-api
+    networks: [videomail]
+
+  # TLS-термінація та роутинг
+  reverse-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - core-api
+      - user-ui
+      - admin-panel
+    volumes:
+      - ${NGINX_CONF}:/etc/nginx/nginx.conf:ro
+      - ${TLS_DIR}:/etc/tls:ro
+    networks: [videomail]

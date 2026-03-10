@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вхід</title>
+  <style>
+    :root { --bg:#0b1320; --fg:#e5e7eb; --card:#111827; --line:#1f2937; --muted:#94a3b8; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial}
+    .wrap{max-width:360px;margin:20vh auto;padding:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+    label{display:block;margin:12px 0 6px 4px;color:var(--muted)}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid #22314d;background:#0f1b33;color:#e5e7eb}
+    .row{display:flex;gap:10px;align-items:center;margin-top:16px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid #22314d;background:#17315e;color:#cfe8ff;cursor:pointer}
+    .error{color:#ffd2d2}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <label for="nick">Нік</label>
+      <input id="nick" autocomplete="username" />
+
+      <label for="code">Код</label>
+      <input id="code" type="password" autocomplete="current-password" />
+
+      <div class="row">
+        <button id="loginBtn" class="btn">Увійти</button>
+        <span id="msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    (function(){
+      const $ = s => document.querySelector(s);
+      const msg = $('#msg');
+
+      if (window.VM && VM.store.user) location.href = 'ui.html';
+
+      $('#loginBtn').addEventListener('click', async () => {
+        msg.textContent = 'Перевіряємо...';
+        const nickname = $('#nick').value.trim();
+        const code = $('#code').value.trim();
+        if (!nickname || !code) {
+          msg.textContent = 'Заповніть Нік і Код';
+          return;
+        }
+        try {
+          const data = await VM.fetchJSON('/api/auth', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({nickname, code})
+          });
+          if (!data.ok) throw new Error(data.error || 'auth_failed');
+          VM.store.user = { user_key: data.user_key, nickname: data.nickname || nickname, session: data.session || null };
+          location.href = 'ui.html';
+        } catch (e) {
+          console.error('AUTH error:', e);
+          msg.textContent = 'Невірні дані або /api/auth недоступний.';
+          msg.classList.add('error');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
